@@ -1,8 +1,7 @@
 // Lógica de Autenticação
 // A senha está em texto simples no código. Isso é INSEGURO para senhas sensíveis,
 // mas suficiente para uma proteção básica interna como solicitado.
-const CORRECT_PASSWORD_1 = "igor987654321";
-const CORRECT_PASSWORD_2 = "lucas987654321";
+const CORRECT_PASSWORD = "lucas987654321";
 const loginBtn = document.getElementById('login-btn');
 const passwordInput = document.getElementById('password-input');
 const loginScreen = document.getElementById('login-screen');
