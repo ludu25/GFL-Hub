@@ -97,14 +97,25 @@ body {
 .sidebar {
     transition: transform 0.3s ease-in-out;
 }
-.sidebar-expanded {
-    transform: translateX(0);
-}
-.sidebar-collapsed {
+/* Em telas pequenas, a barra lateral está oculta por padrão */
+.sidebar.hidden-mobile {
     transform: translateX(-100%);
 }
+/* Quando a barra lateral é expandida, ela se move para a posição visível */
+.sidebar.expanded {
+    transform: translateX(0);
+}
+/* Em telas maiores, a barra lateral está sempre visível */
 @media (min-width: 768px) {
-    .sidebar-collapsed {
-        transform: translateX(0);
+    .sidebar {
+        position: relative;
+        transform: translateX(0) !important;
     }
+}
+.entregador-field-container {
+    border-color: #d1d5db;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    color: #6b7280;
 }

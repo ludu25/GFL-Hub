@@ -1,18 +1,42 @@
-// Lógica de Autenticação
-// A senha está em texto simples no código. Isso é INSEGURO para senhas sensíveis,
-// mas suficiente para uma proteção básica interna como solicitado.
 const CORRECT_PASSWORD = "lucas987654321";
 const loginBtn = document.getElementById('login-btn');
+const guestBtn = document.getElementById('guest-btn');
 const passwordInput = document.getElementById('password-input');
 const loginScreen = document.getElementById('login-screen');
 const appContainer = document.getElementById('app-container');
 const loginFeedback = document.getElementById('login-feedback');
+const userGreeting = document.getElementById('user-greeting');
+const userInitial = document.getElementById('user-initial');
+const sidebar = document.getElementById('sidebar');
+const menuToggleBtn = document.getElementById('menu-toggle');
+const closeMenuBtn = document.getElementById('close-menu-btn');
+let isUserAuthenticated = false;
+let isGuest = false;
 
+/**
+ * @description Função para lidar com o login de convidado.
+ */
+function enterAsGuest() {
+    isUserAuthenticated = true;
+    isGuest = true;
+    loginScreen.classList.add('hidden');
+    appContainer.classList.remove('hidden');
+    userGreeting.textContent = "Bem-vindo, Convidado!";
+    userInitial.textContent = "C";
+    initializeApp();
+}
+
+/**
+ * @description Função para verificar a senha e autenticar o usuário.
+ */
 function checkPassword() {
     if (passwordInput.value === CORRECT_PASSWORD) {
+        isUserAuthenticated = true;
+        isGuest = false;
         loginScreen.classList.add('hidden');
         appContainer.classList.remove('hidden');
-        // Inicializa a aplicação somente após o login
+        userGreeting.textContent = "Bem-vindo, Usuário!";
+        userInitial.textContent = "U";
         initializeApp();
     } else {
         loginFeedback.classList.remove('hidden');
@@ -23,15 +47,36 @@ function checkPassword() {
 }
 
 loginBtn.addEventListener('click', checkPassword);
+guestBtn.addEventListener('click', enterAsGuest);
 passwordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         checkPassword();
     }
 });
 
+// Lógica de navegação do menu lateral
+menuToggleBtn.addEventListener('click', () => {
+    sidebar.classList.remove('hidden-mobile');
+    sidebar.classList.add('expanded');
+});
+
+closeMenuBtn.addEventListener('click', () => {
+    sidebar.classList.remove('expanded');
+    sidebar.classList.add('hidden-mobile');
+});
+
+// Redimensionar e verificar a visibilidade do menu
+function checkSidebarVisibility() {
+    if (window.innerWidth >= 768) {
+        sidebar.classList.remove('hidden-mobile', 'expanded');
+    } else {
+        sidebar.classList.add('hidden-mobile');
+    }
+}
+window.addEventListener('resize', checkSidebarVisibility);
+
 // O restante do código da aplicação foi movido para uma função de inicialização
 function initializeApp() {
-    // Array de dados de cidades e entregadores
     const cidadesEEntregadores = [
         { cidade: "Alfenas", entregador: "JOSÉ RAFAEL DE SOUSA ROCHA" },
         { cidade: "Alpinópolis", entregador: "RODRIGO DE PAULA ROCHA" },
@@ -70,6 +115,49 @@ function initializeApp() {
     
     let selectedLayout = '2-por-pagina';
 
+    // Seleção de elementos da nova navegação
+    const etiquetasLink = document.getElementById('etiquetas-link');
+    const guiaLink = document.getElementById('guia-link');
+    const etiquetasContent = document.getElementById('etiquetas-content');
+    const guiaContent = document.getElementById('guia-content');
+    const navLinks = document.querySelectorAll('#sidebar a');
+    
+    // Adiciona funcionalidade para a navegação lateral
+    checkSidebarVisibility();
+
+
+    /**
+     * @description Função para mostrar o conteúdo selecionado e atualizar o link ativo.
+     * @param {string} contentId - O ID do conteúdo a ser exibido ('etiquetas-content' ou 'guia-content').
+     * @param {string} linkId - O ID do link a ser marcado como ativo.
+     */
+    function showContent(contentId, linkId) {
+        // Esconde todos os conteúdos
+        etiquetasContent.classList.add('hidden');
+        guiaContent.classList.add('hidden');
+        // Remove a classe 'active-link' de todos os links
+        navLinks.forEach(link => {
+            link.classList.remove('active-link', 'text-indigo-400', 'bg-gray-900');
+            link.classList.add('text-gray-300');
+        });
+
+        // Exibe o conteúdo selecionado
+        document.getElementById(contentId).classList.remove('hidden');
+        // Adiciona a classe 'active-link' ao link selecionado
+        document.getElementById(linkId).classList.add('active-link', 'text-indigo-400', 'bg-gray-900');
+        document.getElementById(linkId).classList.remove('text-gray-300');
+    }
+
+    etiquetasLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showContent('etiquetas-content', 'etiquetas-link');
+    });
+
+    guiaLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showContent('guia-content', 'guia-link');
+    });
+    
     /**
      * @description Função para alternar a visibilidade entre as telas de entrada e visualização.
      * @param {string} viewName - O nome da tela a ser exibida ('input' ou 'preview').
@@ -103,14 +191,30 @@ function initializeApp() {
     }
     
     /**
-     * @description Função para atualizar o entregador com base na cidade selecionada.
+     * @description Função para atualizar o campo de exibição do entregador.
      */
     function atualizarEntregador() {
         const cidadeSelecionada = document.getElementById('cidade').value;
-        const entregadorInput = document.getElementById('entregador');
-        const entregador = cidadesEEntregadores.find(item => item.cidade === cidadeSelecionada)?.entregador || "Não encontrado";
-        entregadorInput.value = entregador;
+        const entregadorDisplayContainer = document.getElementById('entregador-display-container');
+        const entregadorHiddenInput = document.getElementById('entregador-hidden-input');
+
+        if (isGuest) {
+            entregadorDisplayContainer.innerHTML = `
+                <div class="flex items-center text-gray-500 cursor-not-allowed">
+                    <i class="fa-solid fa-lock mr-2"></i>
+                    <span class="text-sm">Apenas usuários podem visualizar</span>
+                </div>
+            `;
+            entregadorDisplayContainer.classList.add('entregador-field-container');
+            entregadorHiddenInput.value = "Acesso Convidado";
+        } else {
+            const entregador = cidadesEEntregadores.find(item => item.cidade === cidadeSelecionada)?.entregador || "Não encontrado";
+            entregadorDisplayContainer.textContent = entregador;
+            entregadorDisplayContainer.classList.remove('entregador-field-container');
+            entregadorHiddenInput.value = entregador;
+        }
     }
+
 
     /**
      * @description Gera o HTML para uma única etiqueta.
@@ -121,17 +225,24 @@ function initializeApp() {
      * @param {number} totalItens - Total de itens.
      * @param {string} date - Data formatada.
      * @param {string} entregador - Nome do entregador.
-     * @param {boolean} exibirMotorista - Se o nome do motorista deve ser exibido.
      * @param {number} count - Número do saco atual (ou null para a etiqueta master).
      */
-    function createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, date, entregador, exibirMotorista, count = null) {
+    function createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, date, entregador, count = null) {
         const itensEmSacos = totalItens - avulsos;
+        
+        // Lógica central e robusta para exibir o nome do motorista
+        let showDriver = false;
+        if (!isGuest && document.getElementById('exibirMotorista').checked) {
+            if (count === null) {
+                showDriver = true;
+            }
+        }
         
         const sacoLabel = (count !== null) 
             ? `<div class="text-3xl font-bold">SACO: <span class="ml-1">${count}/${sacos}</span></div>`
             : '';
 
-        const motoristaSection = exibirMotorista
+        const motoristaSection = showDriver
             ? `<div class="mt-auto pt-2 text-center">
                 <div class="text-xl text-gray-500 font-bold">MOTORISTA</div>
                 <div class="text-center font-bold text-2xl">${entregador}</div>
@@ -224,6 +335,7 @@ function initializeApp() {
     atualizarEntregador();
     updateSelectedLayoutDisplay();
     toggleView('input');
+    showContent('etiquetas-content', 'etiquetas-link');
 
     document.getElementById('cidade').addEventListener('change', atualizarEntregador);
 
@@ -233,6 +345,17 @@ function initializeApp() {
     document.getElementById('sacos').addEventListener('input', handleInput);
     document.getElementById('avulsos').addEventListener('input', handleInput);
     document.getElementById('totalItens').addEventListener('input', handleInput);
+    
+    const exibirMotoristaCheckbox = document.getElementById('exibirMotorista');
+    
+    // Lógica para desabilitar o checkbox se o usuário for convidado
+    if (isGuest) {
+        exibirMotoristaCheckbox.disabled = true;
+        exibirMotoristaCheckbox.checked = false;
+    } else {
+        exibirMotoristaCheckbox.disabled = false;
+        exibirMotoristaCheckbox.checked = true;
+    }
 
     function updateSelectedLayoutDisplay() {
         const displaySpan = document.getElementById('selected-layout-display');
@@ -269,6 +392,17 @@ function initializeApp() {
             return;
         }
         
+        // Exibe o modal de aviso de duplex antes da confirmação final
+        document.getElementById('duplex-warning-modal').style.display = 'flex';
+    });
+    
+    // Evento para o botão "Entendido" do novo modal de aviso
+    document.getElementById('acknowledge-duplex-btn').addEventListener('click', () => {
+        // Esconde o modal de aviso
+        document.getElementById('duplex-warning-modal').style.display = 'none';
+
+        // Continua para a lógica de confirmação original
+        const sacos = parseInt(document.getElementById('sacos').value) || 0;
         const labelsCount = sacos + 1;
         const labelsPerPage = selectedLayout === '2-por-pagina' ? 2 : 4;
         const pagesCount = Math.ceil(labelsCount / labelsPerPage);
@@ -276,6 +410,7 @@ function initializeApp() {
         document.getElementById('pages-count').textContent = pagesCount;
         document.getElementById('confirmation-modal').style.display = 'flex';
     });
+
 
     document.getElementById('confirm-generation-btn').addEventListener('click', () => {
         document.getElementById('confirmation-modal').style.display = 'none';
@@ -293,16 +428,20 @@ function initializeApp() {
         const totalItens = parseInt(document.getElementById('totalItens').value) || 0;
         const cidade = document.getElementById('cidade').value;
         const empresa = "GFL";
-        const exibirMotorista = document.getElementById('exibirMotorista').checked;
+        
         const today = new Date();
         const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getFullYear()).slice(-2)}`;
-        const entregador = document.getElementById('entregador').value;
+        
+        // Pega o nome do entregador do campo oculto, que tem o valor correto para a etiqueta.
+        const entregador = document.getElementById('entregador-hidden-input').value;
+
 
         let labelsArray = [];
-        labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador, exibirMotorista));
+        
+        labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador));
         
         for (let i = 1; i <= sacos; i++) {
-            labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador, false, i));
+            labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador, i));
         }
 
         let pagesHtml = [];
@@ -342,16 +481,17 @@ function initializeApp() {
         const totalItens = parseInt(document.getElementById('totalItens').value) || 0;
         const cidade = document.getElementById('cidade').value;
         const empresa = "GFL";
-        const exibirMotorista = document.getElementById('exibirMotorista').checked;
+        
         const today = new Date();
         const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getFullYear()).slice(-2)}`;
-        const entregador = document.getElementById('entregador').value;
+        const entregador = document.getElementById('entregador-hidden-input').value;
 
         let labelsArray = [];
-        labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador, exibirMotorista));
         
+        labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador));
+
         for (let i = 1; i <= sacos; i++) {
-            labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador, false, i));
+            labelsArray.push(createLabelHtml(cidade, empresa, sacos, avulsos, totalItens, formattedDate, entregador, i));
         }
         
         const printContent = generatePrintableHtml(labelsArray);
@@ -437,7 +577,7 @@ function initializeApp() {
             .etiqueta-print .logo-print-size .fa-solid {
                 font-size: 4rem;
             }
-
+            
             .layout-2-labels .etiqueta-print {
                 width: 195mm;
                 height: 141mm;
@@ -498,18 +638,6 @@ function initializeApp() {
         toggleView('input');
     });
 
-    // Adiciona funcionalidade para a navegação lateral
-    const sidebar = document.getElementById('sidebar');
-    const menuToggleBtn = document.getElementById('menu-toggle');
-    const closeMenuBtn = document.getElementById('close-menu-btn');
-
-    menuToggleBtn.addEventListener('click', () => {
-        sidebar.classList.remove('sidebar-collapsed');
-        sidebar.classList.add('sidebar-expanded');
-    });
-
-    closeMenuBtn.addEventListener('click', () => {
-        sidebar.classList.remove('sidebar-expanded');
-        sidebar.classList.add('sidebar-collapsed');
-    });
+    // Chama a função de verificação da barra lateral ao carregar
+    checkSidebarVisibility();
 }
